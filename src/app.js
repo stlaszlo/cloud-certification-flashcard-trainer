@@ -255,12 +255,14 @@ function renderCoach(review) {
 const allServices = () => state.atlas.domains.flatMap(domain => domain.services.map(service => ({ ...service, domainName: domain.name })));
 const selectedDomain = () => state.atlas.domains.find(domain => domain.id === state.selectedDomain) || state.atlas.domains[0];
 const selectedService = () => allServices().find(service => service.id === state.selectedService) || selectedDomain().services[0];
+const domainComparisons = () => state.atlas.comparisons.filter(comparison => comparison.domainId === state.selectedDomain);
 
 function renderServiceAtlas() {
   clearInterval(state.timer);
   const domain = selectedDomain();
   const service = selectedService();
-  const comparison = state.selectedComparison ? state.atlas.comparisons.find(item => item.id === state.selectedComparison) : null;
+  const comparisons = domainComparisons();
+  const comparison = state.selectedComparison ? comparisons.find(item => item.id === state.selectedComparison) : null;
   app.innerHTML = `<div class="shell">
     <header class="topbar"><button class="btn btn-secondary" id="atlas-back">← Exams</button><div class="brand"><span class="brand-mark">S</span>${escapeHtml(state.atlas.provider)} Service Atlas</div><span class="tag">local tutor</span></header>
     <main class="atlas-layout">
@@ -268,7 +270,7 @@ function renderServiceAtlas() {
       <section class="atlas-main">
         <div class="atlas-hero"><p class="eyebrow">${escapeHtml(domain.name)}</p><h1>Know the tool, then choose the architecture.</h1><p>${escapeHtml(domain.summary)}</p></div>
         <div class="service-grid">${domain.services.map(item => serviceButton(item)).join("")}</div>
-        <section class="comparison-strip"><h2>Use-Case Comparisons</h2><div class="comparison-buttons">${state.atlas.comparisons.map(item => `<button class="comparison-chip ${item.id === state.selectedComparison ? "selected" : ""}" data-comparison="${item.id}">${escapeHtml(item.title)}</button>`).join("")}</div></section>
+        <section class="comparison-strip"><h2>Use-Case Comparisons</h2><div class="comparison-buttons">${comparisons.map(item => `<button class="comparison-chip ${item.id === state.selectedComparison ? "selected" : ""}" data-comparison="${item.id}">${escapeHtml(item.title)}</button>`).join("") || "<p class=\"coach-status\">No focused comparisons yet for this domain.</p>"}</div></section>
         <section class="atlas-detail">${comparison ? comparisonPanel(comparison) : servicePanel(service)}</section>
       </section>
     </main>
@@ -311,7 +313,8 @@ function servicePanel(service) {
 }
 
 function comparisonPanel(comparison) {
-  const services = comparison.serviceIds.map(id => allServices().find(service => service.id === id)).filter(Boolean);
+  if (comparison.type === "matrix") return matrixComparisonPanel(comparison);
+  const services = (comparison.serviceIds || []).map(id => allServices().find(service => service.id === id)).filter(Boolean);
   return `<div class="detail-card"><p class="eyebrow">Comparison</p><h2>${escapeHtml(comparison.title)}</h2><p>${escapeHtml(comparison.summary)}</p>
     <div class="detail-list-grid detail-list-grid-wide">
     ${detailList("When To Choose What", comparison.choose)}
@@ -322,6 +325,17 @@ function comparisonPanel(comparison) {
     <section class="coach-section" id="service-tutor"><p class="coach-status">Atlas can explain the difference in exam language.</p></section></div>`;
 }
 
+function matrixComparisonPanel(comparison) {
+  return `<div class="detail-card"><p class="eyebrow">Decision Matrix</p><h2>${escapeHtml(comparison.title)}</h2><p>${escapeHtml(comparison.summary)}</p>
+    <div class="matrix-wrap"><table class="decision-matrix">
+      <thead><tr>${comparison.columns.map(column => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead>
+      <tbody>${comparison.rows.map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table></div>
+    ${comparison.examTrap ? `<div class="notice matrix-note"><strong>Exam trap:</strong> ${escapeHtml(comparison.examTrap)}</div>` : ""}
+    <div class="detail-actions"><button class="btn btn-primary" id="atlas-tutor">Ask Atlas to tutor me</button></div>
+    <section class="coach-section" id="service-tutor"><p class="coach-status">Atlas can explain how to use this decision matrix in exam language.</p></section></div>`;
+}
+
 function detailList(title, items = []) {
   return `<h3>${escapeHtml(title)}</h3><ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
@@ -329,13 +343,13 @@ function detailList(title, items = []) {
 async function requestServiceTutor() {
   const target = document.querySelector("#service-tutor");
   const service = selectedService();
-  const comparison = state.selectedComparison ? state.atlas.comparisons.find(item => item.id === state.selectedComparison) : null;
+  const comparison = state.selectedComparison ? domainComparisons().find(item => item.id === state.selectedComparison) : null;
   target.innerHTML = `<p class="coach-status"><span class="spinner"></span>Atlas is preparing a local-docs style explanation.</p>`;
   const context = comparison ? {
     type: "comparison",
     provider: state.atlas.provider,
     comparison,
-    services: comparison.serviceIds.map(id => allServices().find(item => item.id === id)).filter(Boolean)
+    services: (comparison.serviceIds || []).map(id => allServices().find(item => item.id === id)).filter(Boolean)
   } : {
     type: "service",
     provider: state.atlas.provider,

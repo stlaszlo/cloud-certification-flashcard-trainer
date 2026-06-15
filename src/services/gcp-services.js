@@ -312,6 +312,7 @@ export const gcpServiceAtlas = {
     {
       id: "bigtable-vs-bigquery",
       title: "Bigtable vs BigQuery",
+      domainId: "data",
       serviceIds: ["bigtable", "bigquery"],
       summary: "Bigtable serves low-latency operational access at huge scale; BigQuery analyzes large datasets with SQL.",
       choose: [
@@ -324,6 +325,7 @@ export const gcpServiceAtlas = {
     {
       id: "cloud-run-vs-gke",
       title: "Cloud Run vs GKE",
+      domainId: "compute",
       serviceIds: ["cloud-run", "gke"],
       summary: "Cloud Run minimizes platform operations for containers; GKE gives Kubernetes control and ecosystem depth.",
       choose: [
@@ -336,6 +338,7 @@ export const gcpServiceAtlas = {
     {
       id: "cloud-sql-vs-spanner",
       title: "Cloud SQL vs Spanner",
+      domainId: "data",
       serviceIds: ["cloud-sql", "spanner"],
       summary: "Cloud SQL is managed traditional relational database; Spanner is relational scale with strong consistency.",
       choose: [
@@ -348,6 +351,7 @@ export const gcpServiceAtlas = {
     {
       id: "cloud-build-vs-cloud-deploy",
       title: "Cloud Build vs Cloud Deploy",
+      domainId: "devops",
       serviceIds: ["cloud-build", "cloud-deploy"],
       summary: "Cloud Build builds and automates steps; Cloud Deploy manages release promotion and rollout.",
       choose: [
@@ -360,6 +364,7 @@ export const gcpServiceAtlas = {
     {
       id: "iam-vs-vpcsc",
       title: "IAM vs VPC Service Controls",
+      domainId: "security",
       serviceIds: ["iam", "vpc-service-controls"],
       summary: "IAM controls who can access; VPC Service Controls reduces where protected service data can move.",
       choose: [
@@ -597,6 +602,61 @@ const aiAdditions = [
   }
 ];
 
+const dataAdditions = [
+  {
+    id: "alloydb",
+    name: "AlloyDB for PostgreSQL",
+    purpose: "Managed PostgreSQL-compatible database optimized for demanding enterprise transactional and analytical workloads.",
+    unique: "AlloyDB is the high-performance PostgreSQL-compatible option in GCP. It keeps familiar PostgreSQL compatibility while adding Google-managed performance, availability, read pools, and columnar acceleration that make it more specialized than plain Cloud SQL for PostgreSQL.",
+    equivalents: { aws: "Amazon Aurora PostgreSQL-Compatible Edition", azure: "Azure Cosmos DB for PostgreSQL or Azure Database for PostgreSQL Flexible Server depending on scale pattern" },
+    characteristics: ["PostgreSQL-compatible", "Managed high availability and backups", "Read pools for scale-out reads", "Columnar engine for analytical acceleration"],
+    useWhen: ["You need PostgreSQL compatibility with higher performance expectations", "Read-heavy enterprise OLTP needs scale-out reads", "You want a managed modernization target from self-managed PostgreSQL"],
+    avoidWhen: ["You need MySQL or SQL Server compatibility", "The workload needs global strong-consistency transactions better suited to Spanner"],
+    examSignals: ["PostgreSQL-compatible", "Aurora-like", "read pool", "enterprise PostgreSQL modernization"],
+    docs: "https://cloud.google.com/alloydb/docs/overview"
+  },
+  {
+    id: "firestore",
+    name: "Firestore",
+    purpose: "Serverless document database for mobile, web, and application backends.",
+    unique: "Firestore is the serverless document database in the GCP portfolio. It shines when the app model is documents, collections, mobile/web synchronization, and automatic scaling rather than relational joins or warehouse analytics.",
+    equivalents: { aws: "Amazon DynamoDB or AWS AppSync-backed patterns depending on app shape", azure: "Azure Cosmos DB for NoSQL" },
+    characteristics: ["Document data model", "Serverless automatic scaling", "Strong mobile and web SDK story", "Real-time updates and offline sync patterns"],
+    useWhen: ["You need a serverless document database", "Mobile or web clients need real-time sync", "The access pattern is document-centric"],
+    avoidWhen: ["You need relational joins", "You need large analytical scans better suited to BigQuery"],
+    examSignals: ["document database", "mobile app", "real-time sync", "serverless NoSQL"],
+    docs: "https://cloud.google.com/firestore/docs/firestore-or-datastore"
+  },
+  {
+    id: "memorystore",
+    name: "Memorystore",
+    purpose: "Managed in-memory Redis and Memcached for caching, sessions, leaderboards, and low-latency transient data.",
+    unique: "Memorystore is not the durable database of record; it is the managed in-memory acceleration layer. In exam language, it usually appears when latency, cache hit rate, session storage, or Redis/Memcached compatibility is the clue.",
+    equivalents: { aws: "Amazon ElastiCache", azure: "Azure Cache for Redis" },
+    characteristics: ["Managed Redis and Memcached", "Low-latency in-memory access", "Useful for cache, session, queue-like, and leaderboard patterns", "Reduces database load"],
+    useWhen: ["You need a managed cache", "The app needs low-latency session or transient state", "You want to reduce load on a primary database"],
+    avoidWhen: ["You need a durable source of truth", "You need relational querying or long-term analytics"],
+    examSignals: ["cache", "Redis", "Memcached", "session store", "sub-millisecond style latency"],
+    docs: "https://cloud.google.com/memorystore/docs"
+  }
+];
+
+const securityAdditions = [
+  {
+    id: "identity-aware-proxy",
+    name: "Identity-Aware Proxy",
+    alsoKnownAs: ["IAP"],
+    purpose: "Control access to web applications, VMs, and TCP resources based on user identity and context.",
+    unique: "Identity-Aware Proxy is the GCP access gate for private admin and app access without broadly exposing services or requiring a traditional VPN for every user. It combines identity, context, and proxying, so it is different from IAM permissions on resources and different from network firewall rules.",
+    equivalents: { aws: "AWS Verified Access or Systems Manager Session Manager depending on target", azure: "Microsoft Entra application proxy, Azure Bastion, or Global Secure Access depending on target" },
+    characteristics: ["Identity and context-aware access", "Works for HTTPS apps and TCP forwarding use cases", "Commonly used for SSH/RDP access without public IPs", "Integrates with IAM and access policies"],
+    useWhen: ["Users need secure access to internal web apps", "Admins need SSH or RDP to VMs without public IP exposure", "You want identity-aware access without a broad network VPN"],
+    avoidWhen: ["You need service-to-service authorization inside an app", "You need full private network connectivity for arbitrary protocols"],
+    examSignals: ["no public IP", "SSH through browser or proxy", "internal web app access by identity", "context-aware access"],
+    docs: "https://cloud.google.com/iap/docs/concepts-overview"
+  }
+];
+
 const serviceEnhancements = {
   "cloud-run": {
     unique: "Cloud Run is GCP's most direct bridge between containers and serverless: you bring a container, Google handles the serving platform, autoscaling, and scale-to-zero behavior.",
@@ -698,11 +758,34 @@ const serviceEnhancements = {
 
 gcpServiceAtlas.domains.splice(2, 0, storageDomain);
 gcpServiceAtlas.domains.splice(8, 0, migrationDomain);
+gcpServiceAtlas.domains.find(domain => domain.id === "data").services.push(...dataAdditions);
+gcpServiceAtlas.domains.find(domain => domain.id === "security").services.push(...securityAdditions);
 gcpServiceAtlas.domains.find(domain => domain.id === "ai").services.push(...aiAdditions);
 gcpServiceAtlas.comparisons.push(
   {
+    id: "database-picker",
+    title: "Which Database Should I Pick?",
+    domainId: "data",
+    type: "matrix",
+    summary: "Start with the access pattern, consistency, data model, and operational shape. PCA questions usually hide the answer in latency, scale, SQL needs, global consistency, and whether the workload is analytical or transactional.",
+    columns: ["Need or signal", "Best fit", "Why it fits", "Watch out for"],
+    rows: [
+      ["Ad hoc SQL analytics over TB/PB, BI, reporting, warehouse", "BigQuery", "Serverless analytical warehouse optimized for scans, aggregations, partitioning, clustering, and governed analytics.", "Not an OLTP serving database for hot row updates or millisecond key lookups."],
+      ["Massive low-latency key/range access, time-series, telemetry, IoT, adtech", "Bigtable", "Wide-column operational database with very high throughput and low-latency access at scale.", "No relational joins or ad hoc analyst SQL; design the row key carefully."],
+      ["Global relational ACID, strong consistency, horizontal scale", "Spanner", "Relational SQL with strong consistency and scale across regional or multi-region configurations.", "Overkill for simple regional apps; schema and cost expectations need architectural intent."],
+      ["Standard MySQL, PostgreSQL, or SQL Server application", "Cloud SQL", "Managed familiar relational engines with backups, HA options, replicas, and conventional app compatibility.", "Read replicas help reads, but Cloud SQL is not global horizontally scalable relational infrastructure."],
+      ["PostgreSQL-compatible enterprise OLTP with higher performance/read scaling", "AlloyDB", "Managed PostgreSQL-compatible service with read pools and columnar acceleration for demanding workloads.", "Not for MySQL or SQL Server; Spanner is still the global consistency scale answer."],
+      ["Mobile/web document app, real-time sync, serverless NoSQL", "Firestore", "Document database with automatic scaling, client SDKs, offline sync, and real-time update patterns.", "Avoid for relational joins, complex warehouse analytics, or arbitrary SQL reporting."],
+      ["Cache, session store, leaderboard, transient low-latency data", "Memorystore", "Managed Redis/Memcached reduces latency and load on the primary datastore.", "It is not the durable source of truth; pair with a real database for persistence."],
+      ["Durable objects, files, media, backups, data lake landing zone", "Cloud Storage", "Object storage is cheap, durable, lifecycle-aware, and integrates with analytics and ML pipelines.", "Object storage is not a row-update database or POSIX filesystem."],
+      ["Graph-shaped relationships and traversal-heavy serving", "Partner graph DB or app-level model on a relational/NoSQL store", "GCP does not have a single primary native graph database service in the same way it has BigQuery/Spanner/Bigtable.", "Do not force BigQuery into low-latency graph serving just because it can analyze relationships offline."]
+    ],
+    examTrap: "First separate analytics from serving. Then separate relational from NoSQL. Then look for global strong consistency, low-latency key access, document sync, or cache clues."
+  },
+  {
     id: "cloud-storage-vs-filestore",
     title: "Cloud Storage vs Filestore",
+    domainId: "storage",
     serviceIds: ["cloud-storage-object", "filestore"],
     summary: "Cloud Storage is object storage; Filestore is managed NFS file storage.",
     choose: [
@@ -715,6 +798,7 @@ gcpServiceAtlas.comparisons.push(
   {
     id: "persistent-disk-vs-hyperdisk",
     title: "Persistent Disk vs Hyperdisk",
+    domainId: "storage",
     serviceIds: ["persistent-disk", "hyperdisk"],
     summary: "Persistent Disk is the common VM block storage baseline; Hyperdisk is for tunable, high-performance block storage.",
     choose: [
@@ -727,6 +811,7 @@ gcpServiceAtlas.comparisons.push(
   {
     id: "storage-transfer-vs-transfer-appliance",
     title: "Storage Transfer Service vs Transfer Appliance",
+    domainId: "migration",
     serviceIds: ["storage-transfer-service", "transfer-appliance"],
     summary: "Storage Transfer Service moves data online; Transfer Appliance seeds large datasets offline.",
     choose: [
@@ -739,6 +824,7 @@ gcpServiceAtlas.comparisons.push(
   {
     id: "model-garden-vs-model-registry",
     title: "Model Garden vs Model Registry",
+    domainId: "ai",
     serviceIds: ["model-garden", "model-registry"],
     summary: "Model Garden is where you discover/select models; Model Registry is where you manage your own model lifecycle.",
     choose: [
@@ -751,6 +837,7 @@ gcpServiceAtlas.comparisons.push(
   {
     id: "migration-center-vs-migrate-to-vms",
     title: "Migration Center vs Migrate to VMs",
+    domainId: "migration",
     serviceIds: ["migration-center", "migrate-to-vms"],
     summary: "Migration Center plans the move; Migrate to VMs executes VM rehosting.",
     choose: [
@@ -759,6 +846,19 @@ gcpServiceAtlas.comparisons.push(
       "In a real migration program, assess first, then execute waves with the right migration tool."
     ],
     examTrap: "If the question asks what to use before deciding migration waves, think Migration Center. If it asks how to move VMs, think Migrate to VMs."
+  },
+  {
+    id: "iap-vs-vpn-bastion",
+    title: "IAP vs VPN/Bastion",
+    domainId: "security",
+    serviceIds: ["identity-aware-proxy", "iam"],
+    summary: "Identity-Aware Proxy gates specific apps or admin connections by user identity; VPN-style designs grant broader network reach.",
+    choose: [
+      "Choose IAP when users or admins need identity-aware access to an internal app, SSH, or RDP target without public IP exposure.",
+      "Choose Cloud VPN or Interconnect when the requirement is site-to-site network connectivity between environments.",
+      "Use IAM with IAP so only the right principals can open the proxied path."
+    ],
+    examTrap: "If the stem says no public IPs and user-based access to a VM or internal app, IAP is often the intended answer. If it says entire networks must communicate, think VPN or Interconnect."
   }
 );
 

@@ -125,6 +125,13 @@ h2, h3, p { margin-top: 0; }
 .detail-list-grid h3 { margin-top: 14px; }
 .detail-list-grid-wide { grid-template-columns: minmax(340px, 1fr) minmax(300px, .9fr); align-items: start; }
 .detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.matrix-wrap { margin-top: 18px; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+.decision-matrix { width: 100%; min-width: 920px; border-collapse: collapse; background: #fff; }
+.decision-matrix th, .decision-matrix td { padding: 13px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.decision-matrix th { position: sticky; top: 0; background: #f5f8fd; color: var(--blue-dark); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+.decision-matrix tr:last-child td { border-bottom: 0; }
+.decision-matrix td:first-child { font-weight: 750; color: var(--ink); }
+.matrix-note { margin-top: 16px; }
 .footer-note { margin-top: 28px; color: var(--muted); font-size: .82rem; }
 @media (max-width: 950px) {
   .hero, .results-grid, .exam-layout, .exam-layout.with-case { grid-template-columns: 1fr; }
