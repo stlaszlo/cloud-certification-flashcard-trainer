@@ -340,11 +340,16 @@ function detailList(title, items = []) {
   return `<h3>${escapeHtml(title)}</h3><ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
+function compareAgainstList(items = []) {
+  if (!items.length) return "";
+  return `<h3>Compare Against</h3><ul>${items.map(item => `<li><strong>${escapeHtml(item.service || "Alternative")}:</strong> ${escapeHtml(item.difference || "")}</li>`).join("")}</ul>`;
+}
+
 async function requestServiceTutor() {
   const target = document.querySelector("#service-tutor");
   const service = selectedService();
   const comparison = state.selectedComparison ? domainComparisons().find(item => item.id === state.selectedComparison) : null;
-  target.innerHTML = `<p class="coach-status"><span class="spinner"></span>Atlas is preparing a local-docs style explanation.</p>`;
+  target.innerHTML = `<p class="coach-status"><span class="spinner"></span>Atlas is preparing architecture coaching notes.</p>`;
   const context = comparison ? {
     type: "comparison",
     provider: state.atlas.provider,
@@ -355,16 +360,24 @@ async function requestServiceTutor() {
     provider: state.atlas.provider,
     service
   };
-  const prompt = `You are Atlas, a practical cloud architecture tutor. Explain the following ${context.type} for a learner preparing for the Google Cloud Professional Cloud Architect exam.
-Use the supplied catalog context as your source of truth. Do not invent pricing or SLA numbers. Be descriptive enough to teach the concept, but keep the answer focused.
+  const prompt = `You are Atlas, a senior cloud architecture trainer helping engineers prepare for the Google Cloud Professional Cloud Architect exam and make real architecture decisions.
+Teach through decision cues, trade-offs, common traps, and service comparisons. Be practical, precise, and exam-aware.
+Use the supplied catalog context as your source of truth. Do not invent pricing, SLA numbers, product features, or certification claims that are not in the context. If a detail is uncertain, phrase it as a decision heuristic rather than a fact.
+Focus on how an architect should decide, not on marketing language.
 
 Return JSON only:
 {
   "summary": "3-5 sentences in plain English explaining what it is, why it exists, and how an architect should think about it",
-  "mentalModel": "one memorable mental model",
-  "whenToUse": ["3-5 bullets"],
-  "watchOutFor": ["2-4 traps or non-use cases"],
-  "examCue": "how to recognize this in a PCA question"
+  "architectMentalModel": "one memorable mental model that helps an engineer choose correctly",
+  "examRecognition": "how this usually appears in PCA-style questions and which words should make the learner suspicious",
+  "chooseWhen": ["3-5 concrete decision cues"],
+  "avoidWhen": ["2-4 common wrong-use cases or weaker-fit signals"],
+  "commonTraps": ["2-4 exam traps, misconception traps, or nearby-service confusions"],
+  "compareAgainst": [
+    { "service": "nearby alternative or distractor", "difference": "the deciding factor in one sentence" }
+  ],
+  "realWorldScenario": "one short practical architecture scenario where this is the right choice",
+  "studyDrill": "one short question or exercise that tests whether the learner can choose correctly"
 }
 
 CONTEXT:
@@ -378,7 +391,7 @@ ${JSON.stringify(context)}`;
         prompt,
         stream: false,
         format: "json",
-        options: { temperature: 0.2, num_predict: 1300 }
+        options: { temperature: 0.2, num_predict: 1800 }
       })
     });
     if (!response.ok) throw new Error(`Ollama returned ${response.status}`);
@@ -393,7 +406,28 @@ ${JSON.stringify(context)}`;
 function renderServiceTutor(review) {
   const target = document.querySelector("#service-tutor");
   if (!target) return;
-  target.innerHTML = `<h3>Atlas Tutor Notes</h3><p>${escapeHtml(review.summary || "")}</p><p><strong>Mental model:</strong> ${escapeHtml(review.mentalModel || "")}</p>${detailList("When to use", review.whenToUse || [])}${detailList("Watch out for", review.watchOutFor || [])}<div class="notice"><strong>Exam cue:</strong> ${escapeHtml(review.examCue || "")}</div>`;
+  const mentalModel = review.architectMentalModel || review.mentalModel || "";
+  const examRecognition = review.examRecognition || review.examCue || "";
+  const chooseWhen = review.chooseWhen || review.whenToUse || [];
+  const avoidWhen = review.avoidWhen || review.watchOutFor || [];
+  target.innerHTML = `<h3>Atlas Tutor Notes</h3>
+    <p>${escapeHtml(review.summary || "")}</p>
+    <div class="coach-grid atlas-tutor-grid">
+      <section>
+        <h3>Architect Mental Model</h3>
+        <p>${escapeHtml(mentalModel)}</p>
+      </section>
+      <section>
+        <h3>Exam Recognition</h3>
+        <p>${escapeHtml(examRecognition)}</p>
+      </section>
+      <section>${detailList("Choose When", chooseWhen)}</section>
+      <section>${detailList("Avoid When", avoidWhen)}</section>
+      <section>${detailList("Common Traps", review.commonTraps || [])}</section>
+      <section>${compareAgainstList(review.compareAgainst || [])}</section>
+    </div>
+    ${review.realWorldScenario ? `<div class="notice matrix-note"><strong>Real-world scenario:</strong> ${escapeHtml(review.realWorldScenario)}</div>` : ""}
+    ${review.studyDrill ? `<div class="notice matrix-note"><strong>Study drill:</strong> ${escapeHtml(review.studyDrill)}</div>` : ""}`;
 }
 
 home();
